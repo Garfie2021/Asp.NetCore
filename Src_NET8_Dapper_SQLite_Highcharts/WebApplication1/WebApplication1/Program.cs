@@ -1,4 +1,8 @@
+using WebApplication1.Consts;
+
 var builder = WebApplication.CreateBuilder(args);
+
+StaticData.ConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

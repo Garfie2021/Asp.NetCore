@@ -1,8 +1,23 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model WebApplication1.Models.ViewModel.IndexViewModel
+
+@{
+    ViewData["Title"] = "日経平均株価チャート";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<div id="container" style="width: 6000px; height: 500px;"></div>
+<script>
+    // site.js内のrenderChart関数を呼び出してチャートを描画
+    // .NETのモデルデータをJavaScriptに渡す際に、UNIXタイムスタンプをミリ秒に変換
+    renderChart('container',
+    @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.日経平均株価List.Select(d => new
+        {
+            x = d.日付_UnixTimestamp * 1000, // 秒からミリ秒に変換
+            y = (double)d.終値
+        }).ToList())),
+    @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.内閣List.Select(r => new
+        {
+            x = r.発足日付_UnixTimestamp * 1000, // 秒からミリ秒に変換
+            text = r.内閣名
+        }).ToList()))
+        );
+</script>

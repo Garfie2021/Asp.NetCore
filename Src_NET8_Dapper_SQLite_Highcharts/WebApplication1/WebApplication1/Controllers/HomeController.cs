@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WebApplication1.Models;
+using WebApplication1.Models.ViewModel;
+using WebApplication1.Sqls;
 
 namespace WebApplication1.Controllers
 {
@@ -15,7 +17,16 @@ namespace WebApplication1.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            var “úŒo•½‹ÏŠ”‰¿s = Sql“úŒo•½‹ÏŠ”‰¿.SelectAll();
+            var “àŠts = Sql“àŠt.SelectAll();
+
+            var viewModel = new IndexViewModel
+            {
+                “úŒo•½‹ÏŠ”‰¿List = “úŒo•½‹ÏŠ”‰¿s,
+                “àŠtList = “àŠts
+            };
+
+            return View(viewModel);
         }
 
         public IActionResult Privacy()
