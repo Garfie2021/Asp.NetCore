@@ -1,23 +1,109 @@
 ﻿@model WebApplication1.Models.ViewModel.IndexViewModel
 
 @{
-    ViewData["Title"] = "日経平均株価チャート";
+    ViewData["Title"] = "日経平均株価と内閣発足";
+
+    // 日経平均株価データの処理
+    var stockPrices = Model.日経平均株価List.Select(p => new { x = p.日付_UnixTimestamp * 1000, y = p.終値 }).ToList();
+
+    // アノテーション用の内閣発足データの処理
+    var annotations = Model.内閣List.Select(n =>
+    {
+        // 発足日に最も近い株価を取得する
+        var nearestStockPrice = Model.日経平均株価List
+            .OrderBy(p => Math.Abs(p.日付_UnixTimestamp - n.発足日付_UnixTimestamp))
+            .FirstOrDefault();
+
+        return new
+        {
+            x = n.発足日付_UnixTimestamp * 1000,
+            y = nearestStockPrice != null ? (double?)nearestStockPrice.終値 : null, // 近似の株価に設定
+            label = new
+            {
+                text = n.内閣名
+            }
+        };
+    }).ToList();
 }
 
-<div id="container" style="width: 6000px; height: 500px;"></div>
+<div id="chart" class="chart-container"></div>
+
+<style>
+    .chart-container {
+        border: 1px solid rgba(0, 0, 0, 0.2); /* 薄いグレーの枠線 */
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    // site.js内のrenderChart関数を呼び出してチャートを描画
-    // .NETのモデルデータをJavaScriptに渡す際に、UNIXタイムスタンプをミリ秒に変換
-    renderChart('container',
-    @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.日経平均株価List.Select(d => new
-        {
-            x = d.日付_UnixTimestamp * 1000, // 秒からミリ秒に変換
-            y = (double)d.終値
-        }).ToList())),
-    @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.内閣List.Select(r => new
-        {
-            x = r.発足日付_UnixTimestamp * 1000, // 秒からミリ秒に変換
-            text = r.内閣名
-        }).ToList()))
-        );
+    var stockPrices = @Html.Raw(Json.Serialize(stockPrices));
+    var annotations = @Html.Raw(Json.Serialize(annotations));
+
+    var options = {
+        series: [{
+            name: '日経平均株価',
+            data: stockPrices
+        }],
+        chart: {
+            height: 600,
+            type: 'line',
+            background: '#fff'
+        },
+        xaxis: {
+            type: 'datetime',
+            labels: {
+                style: {
+                    fontSize: '15px'
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                formatter: function (value) {
+                    return value + "円";
+                },
+                style: {
+                    fontSize: '15px'
+                }
+            }
+        },
+        annotations: {
+            points: annotations.map(a => ({
+                x: a.x,
+                y: a.y, // 発足日に対応する近似の株価を指定
+                marker: {
+                    size: 8,
+                    fillColor: 'rgba(255, 69, 96, 0.3)',
+                    strokeColor: 'rgba(255, 69, 96, 0.3)',
+                    strokeWidth: 2,
+                },
+                label: {
+                    borderColor: '#FF4560',
+                    offsetY: -10,
+                    style: {
+                        color: '#000',
+                        background: '#fff',
+                        fontSize: '14px'
+                    },
+                    text: a.label.text
+                }
+            }))
+        },
+        stroke: {
+            curve: 'straight',
+            width: 3,
+            colors: ['#007bff']
+        },
+        tooltip: {
+            x: {
+                format: 'yyyy-MM-dd'
+            }
+        }
+    };
+
+    var chart = new ApexCharts(document.querySelector("#chart"), options);
+    chart.render();
 </script>
