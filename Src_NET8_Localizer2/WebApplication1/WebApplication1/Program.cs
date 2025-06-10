@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Localization.Routing;
 using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,10 +34,12 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
   options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("ja");
   options.SupportedCultures = supportedCultures;
   options.SupportedUICultures = supportedCultures;
+  options.RequestCultureProviders = new[] {
+    new RouteDataRequestCultureProvider { Options = options }
+  };
 });
 
 var app = builder.Build();
-app.UseRequestLocalization();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -46,10 +50,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseRequestLocalization(
+    app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value
+);
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
   name: "default",
-  pattern: "{controller=Home}/{action=Index}/{id?}");
+  pattern: "{culture=ja}/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
